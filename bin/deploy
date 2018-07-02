@@ -1,0 +1,41 @@
+#! /bin/bash
+
+set -e
+
+if [ -z "${DEPLOY_BUCKET}" ]
+then
+  echo "please set the deploy bucket name using the DEPLOY_BUCKET environment variable."
+  exit 1
+fi
+
+if [ -z "${ENVIRONMENT}" ]
+then
+  echo "please specify the environment name using the ENVIRONMENT env variable."
+  exit 1
+fi
+
+
+echo "Running Lambda Deployment To $ENVIRONMENT..."
+if [ ! -f cloudformation/${ENVIRONMENT}.txt ]
+then
+  echo "cloudformation parameter file not found: cloudformation/${ENVIRONMENT}.txt"
+  exit 1
+fi
+
+PARAMETERS=`cat cloudformation/$ENVIRONMENT.txt`
+
+echo "--- Install dependencies"
+docker-compose run deps
+
+echo "--- Packaging Lambda code"
+docker-compose run base aws cloudformation package \
+    --template-file cloudformation/template.yml \
+    --output-template-file serverless-output.yml \
+    --s3-bucket $DEPLOY_BUCKET
+
+echo "+++ Deploying cloudformation"
+docker-compose run base aws cloudformation deploy \
+    --template-file serverless-output.yml \
+    --stack-name ecr-cleaner-$ENVIRONMENT \
+    --capabilities CAPABILITY_IAM \
+    --parameter-override $PARAMETERS

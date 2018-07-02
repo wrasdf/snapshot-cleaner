@@ -1,0 +1,10 @@
+#! /bin/bash
+
+set -e
+
+echo "--- Install dependencies"
+docker-compose build deps test
+docker-compose run deps
+
+echo "+++ Run unit tests"
+docker-compose run test

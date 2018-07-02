@@ -1,0 +1,29 @@
+#! /bin/bash
+
+set -e
+
+trap 'docker-compose kill splunk; docker-compose rm -f splunk' EXIT
+
+
+echo "--- Install dependencies"
+docker-compose build splunk
+docker-compose up -d splunk
+docker-compose build deps integration
+docker-compose run --rm deps
+
+echo "--- Setup and wait for splunk container"
+COUNTER=0
+while ! curl http://localhost:8000
+do
+    sleep 10
+    let COUNTER=$COUNTER+1
+    if [ $COUNTER -ge 40 ]
+    then
+      echo "error: splunk container did not start up properly"
+      docker-compose logs splunk
+      exit 99
+    fi
+done
+
+echo "+++ Run integration tests"
+docker-compose run --rm integration
