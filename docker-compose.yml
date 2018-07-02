@@ -1,0 +1,25 @@
+---
+version: '3.4'
+
+x-base: &base
+  build: .
+  volumes:
+    - "./:/app"
+    - "$HOME/.aws:/root/.aws"
+  environment:
+    AWS_DEFAULT_REGION: "ap-southeast-2"
+    PYTHONPATH: $$PYTHONPATH:/app/lib
+
+services: 
+
+  deps: 
+    <<: *base
+    command: pip install -r requirements.txt -t /app/lib
+
+  test:
+    <<: *base
+    command: pytest tests/unit/
+
+  lambda:
+    <<: *base
+    command: python index.py

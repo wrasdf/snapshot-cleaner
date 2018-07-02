@@ -45,11 +45,12 @@ def expired_snapshots(snaps,now=datetime.utcnow(),days_old=AGE):
     return delete_snaps
 
 def delete_snapshots(ec2,snaps):
-    try:
         for snap in snaps:
-            snap.delete(DryRun=DRYRUN)
-    except Exception as e:
-        print('error: failed to delete snapshot %s: %s' % (snap.id, e))
+            try:
+                snap.delete(DryRun=DRYRUN)
+                print('success: deleted snapshot: %s' % (snap.id))
+            except Exception as e:
+                print('error: failed to delete snapshot %s: %s' % (snap.id, e))
 
 def get_delete_time(now=datetime.utcnow(),days_old=AGE):
     thisTz = now.astimezone().tzinfo
