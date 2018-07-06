@@ -1,12 +1,13 @@
 import json
 import boto3
+from botocore.client import Config
 import argparse
 from datetime import datetime, timedelta
 
 class EC2SnapshotManager:
 
     def __init__(self):
-        self.ec2 = boto3.resource('ec2')
+        self.ec2 = boto3.resource('ec2', config=Config(region_name="ap-southeast-2"))
         self.now = datetime.utcnow()
 
     def list_snapshots(self, filters=[]):
@@ -32,9 +33,11 @@ class EC2SnapshotManager:
             if snap.start_time < delete_time:
                 self.delete_snaps.append(snap)
                 # print('expired snapshot: %s, %s' % (snap.id, snap.start_time))
+        print()
         print("---------------------------------------------")
         print(len(self.delete_snaps), " expired snapshots.")
         print("---------------------------------------------")
+        print()
         return self
 
     def delete_snapshots(self, DryRun=True):
