@@ -32,6 +32,9 @@ class EC2SnapshotManager:
             if snap.start_time < delete_time:
                 self.delete_snaps.append(snap)
                 # print('expired snapshot: %s, %s' % (snap.id, snap.start_time))
+        print("---------------------------------------------")
+        print(len(self.delete_snaps), " expired snapshots.")
+        print("---------------------------------------------")
         return self
 
     def delete_snapshots(self, DryRun=True):
