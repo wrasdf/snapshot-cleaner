@@ -2,7 +2,7 @@ import unittest
 import boto3
 from botocore.client import Config
 from moto import mock_ec2
-from index import EC2SnapshotManager
+from src.snapshots import Snapshots
 
 @mock_ec2
 class TestExpiredSnapshots(unittest.TestCase):
@@ -68,20 +68,20 @@ class TestExpiredSnapshots(unittest.TestCase):
         )
 
     def test_list_snapshots(self):
-        ec2SnapshotManager = EC2SnapshotManager()
-        ec2SnapshotManager.list_snapshots(filters=[{"Name": "tag:Name", "Values": ["TestSnapshot"]}])
-        self.assertEqual(len(ec2SnapshotManager.snaps), 2)
+        snapshotCleaner = Snapshots()
+        snapshotCleaner.list(Filters=[{"Name": "tag:Name", "Values": ["TestSnapshot"]}])
+        self.assertEqual(len(snapshotCleaner.snaps), 2)
 
 
     def test_expired_snapshots_return_none(self):
-        ec2SnapshotManager = EC2SnapshotManager()
-        ec2SnapshotManager.list_snapshots(filters=[{"Name": "tag:Name", "Values": ["TestSnapshot"]}]).expired_snapshots(days_old=5)
-        self.assertEqual(len(ec2SnapshotManager.delete_snaps), 0)
+        snapshotCleaner = Snapshots()
+        snapshotCleaner.list(Filters=[{"Name": "tag:Name", "Values": ["TestSnapshot"]}]).expired(days_old=5)
+        self.assertEqual(len(snapshotCleaner.delete_snaps), 0)
 
     def test_expired_snapshots_return_2(self):
-        ec2SnapshotManager = EC2SnapshotManager()
-        ec2SnapshotManager.list_snapshots(filters=[{"Name": "tag:Name", "Values": ["TestSnapshot"]}]).expired_snapshots(days_old=0)
-        self.assertEqual(len(ec2SnapshotManager.delete_snaps), 2)
+        snapshotCleaner = Snapshots()
+        snapshotCleaner.list(Filters=[{"Name": "tag:Name", "Values": ["TestSnapshot"]}]).expired(days_old=0)
+        self.assertEqual(len(snapshotCleaner.delete_snaps), 2)
 
     @mock_ec2
     def teardown():
