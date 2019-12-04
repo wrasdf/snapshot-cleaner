@@ -2,13 +2,16 @@ import json
 import boto3
 from botocore.client import Config
 import argparse
-from datetime import datetime, timedelta
+import arrow
 
 class EC2SnapshotManager:
 
     def __init__(self):
         self.ec2 = boto3.resource('ec2', config=Config(region_name="ap-southeast-2"))
-        self.now = datetime.utcnow()
+        self.now = arrow.utcnow()
+
+    def get_delete_time(self, days=15):
+        return self.now.shift(days=-days).datetime
 
     def list_snapshots(self, filters=[]):
         try:
@@ -19,12 +22,14 @@ class EC2SnapshotManager:
             self.snaps = []
         return self
 
-    def get_delete_time(self, days=15):
-        now = self.now
-        thisTz = now.astimezone().tzinfo
-        delete_time = now - timedelta(days)
-        # need to add a timezone to the timedelta to allow comparision with snap start time
-        return delete_time.replace(tzinfo=thisTz)
+    def list_amis(self, filters=[]):
+        try:
+            self.amis = self.ec2.images.filter(Owners=['self'], Filters=filters)
+        except Exception as e:
+            print('error: failed to list amis')
+            print(e)
+            self.amis = []
+        return self
 
     def expired_snapshots(self, days_old=15):
         self.delete_snaps = []
@@ -40,11 +45,34 @@ class EC2SnapshotManager:
         print()
         return self
 
+    def expired_amis(self, days_old=15):
+        self.delete_amis = []
+        delete_time = self.get_delete_time(days_old)
+        for ami in self.amis:
+            creation_data = arrow.get(self.ec2.Image(ami.id).creation_date).datetime
+            if creation_data < delete_time:
+                self.delete_amis.append(ami)
+                # print('expired ami: %s' % (ami.id))
+        print()
+        print("---------------------------------------------")
+        print(len(self.delete_amis), " expired amis.")
+        print("---------------------------------------------")
+        print()
+        return self
+
+    def deregister_amis(self, DryRun=True):
+        for ami in self.delete_amis:
+            try:
+                ami.deregister(DryRun)
+                print('success: deleted ami (dryrun=%s) : %s ' % (DryRun, ami.id))
+            except Exception as e:
+                print('error: failed to delete ami %s: %s' % (ami.id, e))
+
     def delete_snapshots(self, DryRun=True):
         for snap in self.delete_snaps:
             try:
                 snap.delete(DryRun)
-                print('success: deleted snapshot: %s' % (snap.id))
+                print('success: deleted snapshot (dryrun=%s) : %s ' % (DryRun, snap.id))
             except Exception as e:
                 print('error: failed to delete snapshot %s: %s' % (snap.id, e))
 
@@ -53,12 +81,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='deletes ebs snapshots')
     parser.add_argument('-dryrun', help='prints the snapshots to be deleted without deleting them', default='true', action='store', dest='dryrun')
     parser.add_argument('-age', help='specifiy minimum age of snapshots in days to be eligible for deletion', default=365, action='store', dest='age')
+    parser.add_argument('-type', help='delete type, only support "snapshot|ami"', default='snapshot', action='store', dest='type')
     parser.add_argument('-filters', help='snapshot filter in json', default=[], type=json.loads)
 
     args = parser.parse_args()
-    DRYRUN = args.dryrun.lower() != 'false'
-    AGE = float(args.age)
+    AGE = int(args.age)
+    TYPE = args.type.lower()
     FILTERS = args.filters
+    DRYRUN = args.dryrun.lower() != 'false'
 
     ec2SnapshotManager = EC2SnapshotManager()
-    ec2SnapshotManager.list_snapshots(filters=FILTERS).expired_snapshots(days_old=AGE).delete_snapshots(DryRun=DRYRUN)
+    if TYPE == "snapshot":
+        ec2SnapshotManager.list_snapshots(filters=FILTERS).expired_snapshots(days_old=AGE).delete_snapshots(DryRun=DRYRUN)
+    elif TYPE == "ami":
+        ec2SnapshotManager.list_amis(filters=FILTERS).expired_amis(days_old=AGE).deregister_amis(DryRun=DRYRUN)
+    else:
+        print("type is worong, we only support 'snapshot|ami' for now")

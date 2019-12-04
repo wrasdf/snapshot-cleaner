@@ -1,7 +1,6 @@
 import unittest
 import boto3
 from botocore.client import Config
-from datetime import datetime, timedelta
 from moto import mock_ec2
 from index import EC2SnapshotManager
 
@@ -67,12 +66,6 @@ class TestExpiredSnapshots(unittest.TestCase):
             SnapshotId=snapshot_object["SnapshotId"],
             DryRun=False
         )
-
-    # def add_days(self, days=10):
-    #     now = datetime.utcnow()
-    #     thisTz = now.astimezone().tzinfo
-    #     new_time = now - timedelta(days)
-    #     return new_time.replace(tzinfo=thisTz)
 
     def test_list_snapshots(self):
         ec2SnapshotManager = EC2SnapshotManager()

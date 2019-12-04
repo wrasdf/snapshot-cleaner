@@ -1,4 +1,4 @@
-FROM python:alpine3.7
+FROM python:3.8-alpine3.10
 WORKDIR /app
 
 RUN apk --update add gcc musl-dev libffi-dev python3-dev openssl-dev make bash jq curl && \
