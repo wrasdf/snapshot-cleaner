@@ -1,4 +1,4 @@
-## ebs-ami-cleaner
+## ebs-ami-cleaner [![CircleCI](https://circleci.com/gh/wrasdf/snapshot-cleaner/tree/master.svg?style=svg)](https://circleci.com/gh/wrasdf/snapshot-cleaner/tree/master)
 
 Local docker to clean EBS snapshots & AMI images.
 Allow the use of filtering by tags and age.
