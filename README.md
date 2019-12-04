@@ -1,4 +1,4 @@
-## ebs-cleaner
+## ebs-ami-cleaner
 
 Local docker to clean EBS snapshots & AMI images.
 Allow the use of filtering by tags and age.
