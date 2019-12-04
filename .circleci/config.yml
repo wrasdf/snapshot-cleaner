@@ -1,0 +1,15 @@
+version: 2.1
+jobs:
+  ut:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: unit Test
+          command: |
+            make test
+workflows:
+  version: 2
+  any-commit:
+    jobs:
+      - ut
