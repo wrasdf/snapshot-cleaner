@@ -1,6 +1,4 @@
 import json
-import boto3
-from botocore.client import Config
 import argparse
 from src.snapshots import Snapshots
 from src.volumes import Volumes

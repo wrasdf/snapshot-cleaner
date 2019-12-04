@@ -8,6 +8,10 @@ Local docker could clean
 Allow the use of filtering by tags and age.
 
 #### Example of using tag filter.
+
+Notes:
+ - Even DryRun=True the code will still `delete` the resources.
+
 AWS auth first
 
 ```
